@@ -28,10 +28,14 @@ static const uint8_t LCD_DISPLAY_FUNCTION_8_BIT_MODE = 0x10;
 static const uint8_t LCD_DISPLAY_FUNCTION_2_LINE = 0x08;
 static const uint8_t LCD_DISPLAY_FUNCTION_5X10_DOTS = 0x04;
 
+static const uint8_t CGRAM_SIZE = 8 * 8;
+
 void LCDDisplay::setup() {
   this->buffer_ = new uint8_t[this->rows_ * this->columns_];
   for (uint8_t i = 0; i < this->rows_ * this->columns_; i++)
     this->buffer_[i] = ' ';
+
+  this->cgram_buffer_ = new uint8_t[CGRAM_SIZE];
 
   uint8_t display_function = 0;
 
@@ -81,6 +85,17 @@ void LCDDisplay::setup() {
 
 float LCDDisplay::get_setup_priority() const { return setup_priority::PROCESSOR; }
 void HOT LCDDisplay::display() {
+
+  if (this->should_update_cgram) {
+    this->command_(LCD_DISPLAY_COMMAND_SET_CGRAM_ADDR | 0);
+
+    for (uint8_t i = 0; i < CGRAM_SIZE; i++) {
+      this->send(this->cgram_buffer_[i], true);
+    }
+
+    should_update_cgram = false;
+  }
+  
   this->command_(LCD_DISPLAY_COMMAND_SET_DDRAM_ADDR | 0);
 
   for (uint8_t i = 0; i < this->columns_; i++)
@@ -148,6 +163,11 @@ void LCDDisplay::printf(const char *format, ...) {
   if (ret > 0)
     this->print(0, 0, buffer);
 }
+void LCDDisplay::set_custom_char(uint8_t char_num, const uint8_t* content) {
+  memcpy(this->cgram_buffer_ + (char_num * 8), content, 8);
+  this->should_update_cgram = true;
+}
+
 void LCDDisplay::clear() {
   // clear display, also sets DDRAM address to 0 (home)
   this->command_(LCD_DISPLAY_COMMAND_CLEAR_DISPLAY);

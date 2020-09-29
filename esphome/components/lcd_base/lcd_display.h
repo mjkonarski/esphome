@@ -39,6 +39,8 @@ class LCDDisplay : public PollingComponent {
   /// Evaluate the printf-format and print the text at column=0 and row=0.
   void printf(const char *format, ...) __attribute__((format(printf, 2, 3)));
 
+  void set_custom_char(uint8_t char_num, const uint8_t* content);
+
 #ifdef USE_TIME
   /// Evaluate the strftime-format and print the text at the specified column and row.
   void strftime(uint8_t column, uint8_t row, const char *format, time::ESPTime time)
@@ -58,6 +60,8 @@ class LCDDisplay : public PollingComponent {
   uint8_t columns_;
   uint8_t rows_;
   uint8_t *buffer_{nullptr};
+  uint8_t *cgram_buffer_{nullptr};
+  bool should_update_cgram = false;
 };
 
 }  // namespace lcd_base
